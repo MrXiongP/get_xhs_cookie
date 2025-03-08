@@ -63,6 +63,11 @@ self.saveCustomDomainRule = async function(rule) {
 // 删除自定义域名规则
 async function removeCustomDomainRule(rule) {
     try {
+        // 检查是否为默认规则，如果是则不允许删除
+        if (DEFAULT_DOMAIN_RULES.includes(rule)) {
+            throw new Error('默认规则不可删除');
+        }
+        
         const customRules = await chrome.storage.local.get(CUSTOM_RULES_KEY);
         const rules = customRules[CUSTOM_RULES_KEY] || [];
         const index = rules.indexOf(rule);

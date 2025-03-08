@@ -275,18 +275,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // 创建详细规则区域的HTML
                 let detailsHTML = '<div class="bg-white rounded-lg shadow-sm p-4"><h3 class="text-lg font-semibold text-gray-700 mb-3">详细规则</h3><ul class="space-y-2">';
 
+                // 获取默认规则列表
+                const defaultRules = await chrome.runtime.sendMessage({ action: 'getDefaultRules' });
+
                 domainRules.forEach(rule => {
+                    const isDefaultRule = defaultRules.includes(rule);
                     detailsHTML += `
-                        <li class="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
-                            <span class="text-gray-700">${rule}</span>
-                            <button class="text-red-500 hover:text-red-700 delete-rule" data-rule="${rule}">
-                                <span class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                    </svg>
-                                    删除
-                                </span>
-                            </button>
+                        <li class="flex justify-between items-center p-2 ${isDefaultRule ? 'bg-blue-50' : 'bg-gray-50'} rounded hover:bg-gray-100 transition-colors">
+                            <span class="text-gray-700">
+                                ${rule}
+                                ${isDefaultRule ? '<span class="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">默认规则</span>' : ''}
+                            </span>
+                            ${isDefaultRule ?
+                            `<span class="text-gray-400 text-sm">不可删除</span>` :
+                            `<button class="text-red-500 hover:text-red-700 delete-rule" data-rule="${rule}">
+                                    <span class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        删除
+                                    </span>
+                                </button>`
+                        }
                         </li>
                     `;
                 });

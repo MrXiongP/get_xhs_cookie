@@ -207,6 +207,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
     
+    if (message.action === 'getDefaultRules') {
+        sendResponse(DEFAULT_DOMAIN_RULES);
+        return true;
+    }
+    
     // 处理Cookie模板相关请求
     if (message.action === 'getClass' && message.class === 'CookieTemplate') {
         // 发送类的字符串表示而不是类本身，避免序列化错误
