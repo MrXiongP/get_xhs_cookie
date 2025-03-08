@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小红书Cookie获取器</title>
+    <link rel="stylesheet" href="../assets/tailwind.min.css">
+    <style>
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="w-[1000px] p-6 bg-gradient-to-br from-red-50 to-white">
+    <div class="flex flex-col items-center space-y-6">
+        <div class="flex items-center space-x-2">
+            <img src="../icons/icon48.png" alt="Logo" class="w-8 h-8">
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-pink-600">
+                小红书Cookie获取器</h1>
+        </div>
+
+        <button id="getCookie" class="w-full py-3 px-6 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg
+                   hover:from-red-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-200
+                   focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg
+                   flex items-center justify-center space-x-2">
+            <span class="text-center inline-block w-full font-bold">获取Cookie</span>
+            <svg class="w-5 h-5 hidden loading" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+        </button>
+
+        <!-- 添加自定义域名设置按钮 -->
+        <button id="openDomainSettings" class="w-full py-2 px-6 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg
+                   hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 transition-all duration-200
+                   focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 shadow-md
+                   flex items-center justify-center space-x-2">
+            <span class="text-center inline-block w-full font-medium">自定义域名设置</span>
+        </button>
+
+        <div id="status" class="hidden w-full p-4 rounded-lg text-sm shadow-md fade-in">
+            <p class="text-center font-medium"></p>
+        </div>
+
+        <div class="w-full space-y-2">
+            <div class="flex justify-between items-center">
+                <h2 class="text-sm font-semibold text-gray-700">操作日志</h2>
+                <span id="clearLogs"
+                    class="text-xs text-gray-500 cursor-pointer hover:text-red-600 transition-colors">清除日志</span>
+            </div>
+            <div id="logContainer"
+                class="w-full h-48 overflow-y-auto p-4 bg-white rounded-lg text-xs space-y-2 border border-gray-200 shadow-inner">
+                <!-- 日志内容将在这里动态插入 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+{
+    "manifest_version": 3,
+    "name": "小红书Cookie获取器",
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
+    "version": "1.0",
+    "description": "一个简单的Chrome扩展，用于获取小红书网站的Cookie",
+    "permissions": [
+        "cookies",
+        "clipboardWrite",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "*://*.xiaohongshu.com/*"
+    ],
+    "action": {
+        "default_popup": "popup/index.html",
+        "default_width": 1000,
+        "default_height": 600,
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "options_page": "options/index.html",
+    "background": {
+        "service_worker": "background/background.js"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "assets/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
