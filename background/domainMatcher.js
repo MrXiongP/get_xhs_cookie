@@ -4,12 +4,8 @@ const DEFAULT_DOMAIN_RULES = [
     '^xiaohongshu\.com$'
 ];
 
-// 存储键名
-const CUSTOM_RULES_KEY = 'xhs_custom_domain_rules';
-
 // 导出为全局变量
 self.DEFAULT_DOMAIN_RULES = DEFAULT_DOMAIN_RULES;
-self.CUSTOM_RULES_KEY = CUSTOM_RULES_KEY;
 
 // 验证正则表达式的有效性
 function isValidRegex(pattern) {
@@ -24,13 +20,22 @@ function isValidRegex(pattern) {
 // 获取所有域名规则（包括默认规则和自定义规则）
 self.getAllDomainRules = async function() {
     try {
-        const customRules = await chrome.storage.local.get(CUSTOM_RULES_KEY);
-        const rules = [...DEFAULT_DOMAIN_RULES];
-
-        if (customRules[CUSTOM_RULES_KEY]) {
-            rules.push(...customRules[CUSTOM_RULES_KEY]);
-        }
-
+        // 使用新的StorageManager获取域名规则
+        const domainRules = await StorageManager.getAllDomainRules();
+        
+        // 将新的数据结构转换为旧的格式，以保持向后兼容性
+        let rules = [...DEFAULT_DOMAIN_RULES];
+        
+        // 添加自定义规则
+        Object.values(domainRules).forEach(domainRule => {
+            if (domainRule.rules && Array.isArray(domainRule.rules)) {
+                rules = [...rules, ...domainRule.rules];
+            }
+        });
+        
+        // 去重
+        rules = [...new Set(rules)];
+        
         return rules;
     } catch (error) {
         console.error('获取域名规则失败:', error);
@@ -45,12 +50,26 @@ self.saveCustomDomainRule = async function(rule) {
     }
 
     try {
-        const customRules = await chrome.storage.local.get(CUSTOM_RULES_KEY);
-        const rules = customRules[CUSTOM_RULES_KEY] || [];
-
-        if (!rules.includes(rule)) {
-            rules.push(rule);
-            await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: rules });
+        // 从规则中提取域名
+        const domain = rule.replace(/[\^\$\*\.]/g, '');
+        
+        // 获取现有规则
+        const domainRules = await StorageManager.getAllDomainRules();
+        const templateId = `${domain}_template`;
+        
+        if (domainRules[domain]) {
+            // 如果域名已存在，添加新规则
+            if (!domainRules[domain].rules.includes(rule)) {
+                domainRules[domain].rules.push(rule);
+                await StorageManager.saveDomainRule(
+                    domain, 
+                    domainRules[domain].rules, 
+                    domainRules[domain].template_id
+                );
+            }
+        } else {
+            // 如果域名不存在，创建新记录
+            await StorageManager.saveDomainRule(domain, [rule], templateId);
         }
 
         return true;
@@ -68,13 +87,33 @@ async function removeCustomDomainRule(rule) {
             throw new Error('默认规则不可删除');
         }
         
-        const customRules = await chrome.storage.local.get(CUSTOM_RULES_KEY);
-        const rules = customRules[CUSTOM_RULES_KEY] || [];
-        const index = rules.indexOf(rule);
-
-        if (index !== -1) {
-            rules.splice(index, 1);
-            await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: rules });
+        // 从规则中提取域名
+        const domain = rule.replace(/[\^\$\*\.]/g, '');
+        
+        // 获取现有规则
+        const domainRules = await StorageManager.getAllDomainRules();
+        
+        if (domainRules[domain] && domainRules[domain].rules) {
+            const rules = domainRules[domain].rules;
+            const index = rules.indexOf(rule);
+            
+            if (index !== -1) {
+                rules.splice(index, 1);
+                
+                if (rules.length > 0) {
+                    // 如果还有其他规则，更新规则列表
+                    await StorageManager.saveDomainRule(
+                        domain, 
+                        rules, 
+                        domainRules[domain].template_id
+                    );
+                } else {
+                    // 如果没有规则了，删除整个域名记录
+                    const allRules = await StorageManager.getAllDomainRules();
+                    delete allRules[domain];
+                    await chrome.storage.local.set({ 'xhs_domain_rules': allRules });
+                }
+            }
         }
 
         return true;
@@ -86,17 +125,23 @@ async function removeCustomDomainRule(rule) {
 
 // 检查域名是否匹配规则
 async function isDomainMatched(domain) {
-    const rules = await getAllDomainRules();
-
-    return rules.some(rule => {
-        try {
-            const regex = new RegExp(rule);
-            return regex.test(domain);
-        } catch (e) {
-            console.error(`规则 ${rule} 无效:`, e);
-            return false;
-        }
+    // 获取所有域名规则
+    const domainRules = await StorageManager.getAllDomainRules();
+    
+    // 检查是否有匹配的规则
+    const matchedDomain = Object.entries(domainRules).find(([_, rule]) => {
+        return rule.rules.some(pattern => {
+            try {
+                const regex = new RegExp(pattern);
+                return regex.test(domain);
+            } catch (e) {
+                console.error(`规则 ${pattern} 无效:`, e);
+                return false;
+            }
+        });
     });
+    
+    return !!matchedDomain;
 }
 
 // 导出为全局函数

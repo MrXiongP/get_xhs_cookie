@@ -1,6 +1,3 @@
-// 存储键名
-const COOKIE_TEMPLATES_KEY = 'xhs_cookie_templates';
-
 // Cookie模板结构
 class CookieTemplate {
     constructor(domain, requiredFields = [], optionalFields = []) {
@@ -36,35 +33,39 @@ class CookieTemplate {
     }
 }
 
-// 获取指定域名的Cookie模板
+// 获取指定域名的Cookie模板 - 使用StorageManager
 async function getCookieTemplate(domain) {
     try {
-        const templates = await chrome.storage.local.get(COOKIE_TEMPLATES_KEY);
-        const allTemplates = templates[COOKIE_TEMPLATES_KEY] || {};
-        return allTemplates[domain] ?
-            new CookieTemplate(
-                domain,
-                allTemplates[domain].requiredFields,
-                allTemplates[domain].optionalFields
-            ) : null;
+        // 使用StorageManager获取模板
+        const template = await StorageManager.getCookieTemplateByDomain(domain);
+        if (!template) return null;
+        
+        return new CookieTemplate(
+            domain,
+            template.requiredFields,
+            template.template.optionalFields || []
+        );
     } catch (error) {
         console.error('获取Cookie模板失败:', error);
         return null;
     }
 }
 
-// 保存Cookie模板
+// 保存Cookie模板 - 使用StorageManager
 async function saveCookieTemplate(template) {
     try {
-        const templates = await chrome.storage.local.get(COOKIE_TEMPLATES_KEY);
-        const allTemplates = templates[COOKIE_TEMPLATES_KEY] || {};
-
-        allTemplates[template.domain] = {
+        const templateId = `${template.domain}_template`;
+        const templateData = {
             requiredFields: template.requiredFields,
             optionalFields: template.optionalFields
         };
-
-        await chrome.storage.local.set({ [COOKIE_TEMPLATES_KEY]: allTemplates });
+        
+        await StorageManager.saveCookieTemplate(
+            templateId,
+            template.domain,
+            template.requiredFields,
+            templateData
+        );
         return true;
     } catch (error) {
         console.error('保存Cookie模板失败:', error);

@@ -62,11 +62,16 @@
                 transform: translateX(0);
             }
         }
+
+        .tab-active {
+            border-bottom: 2px solid #DC2626;
+            color: #DC2626;
+        }
     </style>
 </head>
 
 <body class="min-h-screen p-6 bg-gradient-to-br from-red-50 to-white">
-    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-pink-600">设置
             </h1>
@@ -82,71 +87,178 @@
             </button>
         </div>
 
+        <!-- 统一的状态提示 -->
+        <div id="status" class="hidden shadow-md fade-in mb-4"
+            style="padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;">
+            <p class="text-center font-medium"></p>
+        </div>
+
+        <!-- 域名规则和Cookie模板管理界面 -->
         <div class="space-y-4">
-            <!-- 域名规则设置部分 -->
-            <div class="p-4 bg-white rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-700 mb-4">域名规则设置</h2>
-                <div class="space-y-2">
-                    <label for="domainRule" class="block text-sm font-medium text-gray-700">域名匹配规则</label>
-                    <input type="text" id="domainRule"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="输入域名匹配规则（例如：*.xiaohongshu.com）">
+            <!-- 选项卡导航 -->
+            <div class="flex border-b border-gray-200 mb-4">
+                <button id="tab-add" class="px-4 py-2 font-medium tab-active">添加规则和模板</button>
+                <button id="tab-batch" class="px-4 py-2 font-medium">批量操作</button>
+                <button id="tab-manage" class="px-4 py-2 font-medium">管理规则和模板</button>
+            </div>
+
+            <!-- 添加规则和模板面板 -->
+            <div id="panel-add" class="space-y-4">
+                <!-- 域名规则设置部分 -->
+                <div class="p-4 bg-white rounded-lg shadow-sm">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">域名规则设置</h2>
+                    <div class="space-y-2">
+                        <label for="domainRule" class="block text-sm font-medium text-gray-700">域名匹配规则</label>
+                        <input type="text" id="domainRule"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            placeholder="输入域名匹配规则（例如：*.xiaohongshu.com）">
+                    </div>
+
+                    <div class="flex space-x-4 mt-4">
+                        <button id="validateRule"
+                            style="flex: 1; padding: 0.5rem 1rem; background: linear-gradient(to right, #6B7280, #4B5563); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
+                            验证规则
+                        </button>
+                        <button id="saveRule"
+                            style="flex: 1; padding: 0.5rem 1rem; background: linear-gradient(to right, #DC2626, #DB2777); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
+                            保存规则
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex space-x-4 mt-4">
-                    <button id="validateRule"
-                        style="flex: 1; padding: 0.5rem 1rem; background: linear-gradient(to right, #6B7280, #4B5563); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
-                        验证规则
-                    </button>
-                    <button id="saveRule"
-                        style="flex: 1; padding: 0.5rem 1rem; background: linear-gradient(to right, #DC2626, #DB2777); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
-                        保存规则
-                    </button>
+                <!-- Cookie模板分析部分 -->
+                <div class="p-4 bg-white rounded-lg shadow-sm">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Cookie模板分析</h2>
+                    <div class="space-y-2">
+                        <label for="cookieDomain" class="block text-sm font-medium text-gray-700">域名</label>
+                        <input type="text" id="cookieDomain"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            placeholder="输入域名（例如：xiaohongshu.com）">
+                    </div>
+                    <div class="space-y-2 mt-3">
+                        <label for="cookieString" class="block text-sm font-medium text-gray-700">Cookie字符串</label>
+                        <textarea id="cookieString"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 h-24"
+                            placeholder="粘贴完整的Cookie字符串"></textarea>
+                    </div>
+                    <div class="mt-4">
+                        <button id="analyzeCookie"
+                            style="width: 100%; padding: 0.5rem 1rem; background: linear-gradient(to right, #DC2626, #DB2777); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
+                            分析并保存模板
+                        </button>
+                    </div>
+                    <!-- 添加模板列表容器 -->
+                    <div class="mt-4">
+                        <h3 class="text-md font-medium text-gray-700 mb-2">已保存的模板</h3>
+                        <ul id="templateList" class="space-y-2 max-h-60 overflow-y-auto">
+                            <!-- 模板列表将通过JavaScript动态生成 -->
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <!-- Cookie模板分析部分 -->
-            <div class="p-4 bg-white rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-700 mb-4">Cookie模板分析</h2>
-                <div class="space-y-2">
-                    <label for="cookieDomain" class="block text-sm font-medium text-gray-700">域名</label>
-                    <input type="text" id="cookieDomain"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="输入域名（例如：xiaohongshu.com）">
-                </div>
-                <div class="space-y-2 mt-3">
-                    <label for="cookieString" class="block text-sm font-medium text-gray-700">Cookie字符串</label>
-                    <textarea id="cookieString"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 h-24"
-                        placeholder="粘贴完整的Cookie字符串"></textarea>
-                </div>
-                <div class="mt-4">
-                    <button id="analyzeCookie"
-                        style="width: 100%; padding: 0.5rem 1rem; background: linear-gradient(to right, #DC2626, #DB2777); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
-                        分析并保存模板
-                    </button>
+            <!-- 批量操作面板 -->
+            <div id="panel-batch" class="hidden space-y-4">
+                <!-- 批量导入导出功能 -->
+                <div class="p-4 bg-white rounded-lg shadow-sm">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">批量导入导出</h2>
+                    <div class="space-y-4">
+                        <!-- 导出功能 -->
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <h3 class="text-md font-medium text-gray-700 mb-2">导出数据</h3>
+                            <p class="text-sm text-gray-600 mb-3">将当前所有域名规则和Cookie模板导出为JSON文件</p>
+                            <button id="exportData"
+                                style="width: 100%; padding: 0.5rem 1rem; background: linear-gradient(to right, #4F46E5, #6366F1); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out;">
+                                导出数据
+                            </button>
+                        </div>
+
+                        <!-- 导入功能 -->
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <h3 class="text-md font-medium text-gray-700 mb-2">导入数据</h3>
+                            <p class="text-sm text-gray-600 mb-3">从JSON文件导入域名规则和Cookie模板</p>
+                            <div class="flex flex-col space-y-3">
+                                <div class="flex items-center justify-center w-full">
+                                    <label for="importFile"
+                                        class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <svg class="w-8 h-8 mb-3 text-gray-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                                </path>
+                                            </svg>
+                                            <p class="mb-2 text-sm text-gray-500"><span
+                                                    class="font-semibold">点击上传</span>或拖放文件</p>
+                                            <p class="text-xs text-gray-500">JSON文件 (仅支持.json格式)</p>
+                                        </div>
+                                        <input id="importFile" type="file" class="hidden" accept=".json" />
+                                    </label>
+                                </div>
+                                <div id="fileInfo" class="text-sm text-gray-600 hidden">
+                                    已选择文件: <span id="fileName"></span>
+                                </div>
+                                <button id="importData" disabled
+                                    style="width: 100%; padding: 0.5rem 1rem; background: linear-gradient(to right, #DC2626, #DB2777); color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out; opacity: 0.7;">
+                                    导入数据
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 导入选项 -->
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <h3 class="text-md font-medium text-gray-700 mb-2">导入选项</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input id="mergeOption" type="radio" name="importOption" value="merge" checked
+                                        class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                                    <label for="mergeOption" class="ml-2 block text-sm text-gray-700">合并 -
+                                        保留现有数据，添加新数据</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="overwriteOption" type="radio" name="importOption" value="overwrite"
+                                        class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                                    <label for="overwriteOption" class="ml-2 block text-sm text-gray-700">覆盖 -
+                                        删除现有数据，完全替换为导入数据</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文件格式说明 -->
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <h3 class="text-md font-medium text-gray-700 mb-2">文件格式说明</h3>
+                            <div class="text-sm text-gray-600">
+                                <p class="mb-2">导入文件必须是有效的JSON格式，包含以下结构：</p>
+                                <pre class="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40">{{
+  "domain_rules": {
+    "example.com": {
+      "rules": ["^example\.com$", "^*.example\.com$"],
+      "template_id": "example_com_template"
+    }
+  },
+  "cookie_templates": {
+    "example_com_template": {
+      "domain": "example.com",
+      "requiredFields": ["sessionid", "user_token"],
+      "template": {...}
+    }
+  }
+}}</pre>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="status" class="hidden shadow-md fade-in"
-                style="padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;">
-                <p class="text-center font-medium"></p>
-            </div>
-
-            <!-- 规则列表 -->
-            <div class="mt-4 p-4 bg-gray-100 rounded-lg">
-                <h2 class="text-lg font-semibold text-gray-700 mb-2">当前规则列表</h2>
-                <div id="ruleList">
-                    <!-- 规则列表将通过JavaScript动态生成 -->
+            <!-- 管理规则和模板面板 -->
+            <div id="panel-manage" class="hidden">
+                <!-- 集成的规则和模板管理界面 -->
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">域名规则和Cookie模板管理</h2>
+                    <div id="ruleList" class="space-y-4">
+                        <!-- 规则和模板列表将通过JavaScript动态生成 -->
+                    </div>
                 </div>
-            </div>
-
-            <!-- Cookie模板列表 -->
-            <div class="mt-4 p-4 bg-gray-100 rounded-lg">
-                <h2 class="text-lg font-semibold text-gray-700 mb-2">当前Cookie模板</h2>
-                <ul id="templateList" class="space-y-2 text-sm text-gray-600">
-                    <!-- 模板列表将通过JavaScript动态生成 -->
-                </ul>
             </div>
         </div>
     </div>

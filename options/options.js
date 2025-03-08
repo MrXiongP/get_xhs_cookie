@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td class="py-3 px-3 text-gray-700">${domain}</td>
                         <td class="py-3 px-3 text-right">
-                            <button class="text-blue-500 hover:text-blue-700 mr-3 view-domain-rules" data-rules='${JSON.stringify(domainRules)}'>
+                            <button class="text-blue-500 hover:text-blue-700 mr-3 view-domain-rules" data-rules='${JSON.stringify(domainRules)}' data-domain="${domain}">
                                 <span class="flex items-center justify-end">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -247,7 +247,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('尝试保存规则...');
             await saveCustomDomainRule(rule);
             console.log('规则保存成功');
-            showStatus('规则保存成功');
+
+            // 提取域名，用于自动关联Cookie模板
+            const domain = rule.replace(/[\^\$\*\.]/g, '');
+            console.log('提取的域名:', domain);
+
+            // 检查是否已有该域名的Cookie模板
+            const templates = await chrome.storage.local.get('xhs_cookie_templates');
+            const allTemplates = templates['xhs_cookie_templates'] || {};
+
+            if (!allTemplates[domain]) {
+                // 如果没有该域名的模板，提示用户创建
+                showStatus(`规则保存成功，请为 ${domain} 创建Cookie模板`);
+                // 自动填充Cookie模板域名输入框
+                cookieDomainInput.value = domain;
+            } else {
+                showStatus(`规则保存成功，已关联到 ${domain} 的Cookie模板`);
+            }
+
             domainRuleInput.value = '';
             await loadRules();
         } catch (error) {
@@ -270,10 +287,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('查看域名规则按钮被点击');
             try {
                 const domainRules = JSON.parse(button.dataset.rules);
+                const domain = button.dataset.domain;
                 console.log('域名规则列表:', domainRules);
 
+                // 获取该域名的Cookie模板
+                const templates = await chrome.storage.local.get('xhs_cookie_templates');
+                const allTemplates = templates['xhs_cookie_templates'] || {};
+                const template = allTemplates[domain];
+
                 // 创建详细规则区域的HTML
-                let detailsHTML = '<div class="bg-white rounded-lg shadow-sm p-4"><h3 class="text-lg font-semibold text-gray-700 mb-3">详细规则</h3><ul class="space-y-2">';
+                let detailsHTML = '<div class="bg-white rounded-lg shadow-sm p-4"><h3 class="text-lg font-semibold text-gray-700 mb-3">详细规则</h3>';
+
+                // 添加Cookie模板信息
+                if (template) {
+                    detailsHTML += `
+                        <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+                            <h4 class="text-sm font-semibold text-blue-700 mb-2">关联的Cookie模板</h4>
+                            <div class="text-sm text-blue-600">
+                                <p>必需字段 (${template.requiredFields.length}): ${template.requiredFields.join(', ')}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    detailsHTML += `
+                        <div class="mb-4 p-3 bg-yellow-50 rounded-lg">
+                            <h4 class="text-sm font-semibold text-yellow-700 mb-2">未关联Cookie模板</h4>
+                            <p class="text-sm text-yellow-600">建议为此域名创建Cookie模板以确保获取完整的Cookie信息</p>
+                        </div>
+                    `;
+                }
+
+                detailsHTML += '<ul class="space-y-2">';
 
                 // 获取默认规则列表
                 const defaultRules = await chrome.runtime.sendMessage({ action: 'getDefaultRules' });
@@ -358,6 +402,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             cookieDomainInput.value = '';
             cookieStringInput.value = '';
             await loadTemplates();
+            // 重新加载规则列表以更新关联信息
+            await loadRules();
         } catch (error) {
             console.error('分析Cookie失败:', error);
             showStatus(`分析Cookie失败: ${error.message}`, true);
@@ -384,6 +430,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.log('模板删除成功');
                     showStatus(`已删除${domainToDelete}的Cookie模板`);
                     await loadTemplates();
+                    // 重新加载规则列表以更新关联信息
+                    await loadRules();
                 } else {
                     console.log(`未找到${domainToDelete}的模板`);
                 }
@@ -403,5 +451,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         console.error('未找到返回按钮元素，无法添加点击事件');
     }
+
+    // 添加选项卡切换功能
+    const tabAdd = document.getElementById('tab-add');
+    const tabBatch = document.getElementById('tab-batch');
+    const tabManage = document.getElementById('tab-manage');
+    const panelAdd = document.getElementById('panel-add');
+    const panelBatch = document.getElementById('panel-batch');
+    const panelManage = document.getElementById('panel-manage');
+
+    tabAdd.addEventListener('click', () => {
+        tabAdd.classList.add('tab-active');
+        tabBatch.classList.remove('tab-active');
+        tabManage.classList.remove('tab-active');
+        panelAdd.classList.remove('hidden');
+        panelBatch.classList.add('hidden');
+        panelManage.classList.add('hidden');
+    });
+
+    tabBatch.addEventListener('click', () => {
+        tabBatch.classList.add('tab-active');
+        tabAdd.classList.remove('tab-active');
+        tabManage.classList.remove('tab-active');
+        panelBatch.classList.remove('hidden');
+        panelAdd.classList.add('hidden');
+        panelManage.classList.add('hidden');
+    });
+
+    tabManage.addEventListener('click', () => {
+        tabManage.classList.add('tab-active');
+        tabAdd.classList.remove('tab-active');
+        tabBatch.classList.remove('tab-active');
+        panelManage.classList.remove('hidden');
+        panelAdd.classList.add('hidden');
+        panelBatch.classList.add('hidden');
+        // 切换到管理面板时重新加载规则和模板
+        loadRules();
+        loadTemplates();
+    });
 
 });

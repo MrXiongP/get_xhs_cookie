@@ -11,6 +11,8 @@ try {
     console.log('成功加载domainMatcher.js');
     importScripts('./cookieTemplate.js');
     console.log('成功加载cookieTemplate.js');
+    importScripts('./storage.js');
+    console.log('成功加载storage.js');
 } catch (error) {
     console.error('加载脚本失败:', error);
 }
@@ -32,16 +34,15 @@ async function getCookies() {
         console.log('当前域名:', domain);
 
         // 检查域名是否匹配规则
-        if (typeof self.getAllDomainRules !== 'function') {
-            throw new Error('域名规则检查功能未正确加载');
-        }
-        const domainRules = await self.getAllDomainRules();
-        const isMatched = domainRules.some(rule => {
-            const regex = new RegExp(rule);
-            return regex.test(domain);
+        const domainRules = await StorageManager.getAllDomainRules();
+        const domainRule = Object.entries(domainRules).find(([_, rule]) => {
+            return rule.rules.some(pattern => {
+                const regex = new RegExp(pattern);
+                return regex.test(domain);
+            });
         });
-        console.log('域名匹配检查结果:', isMatched);
-        if (!isMatched) {
+        console.log('域名匹配检查结果:', domainRule ? '匹配' : '不匹配');
+        if (!domainRule) {
             throw new Error('当前网站不在允许的域名列表中');
         }
 
@@ -73,10 +74,16 @@ async function getCookies() {
         
         // 检查是否有对应域名的Cookie模板，如果有则验证Cookie是否包含所有必需字段
         try {
-            const template = await getCookieTemplate('xiaohongshu.com');
+            const [matchedDomain] = domainRule;
+            const template = await StorageManager.getCookieTemplateByDomain(matchedDomain);
             if (template) {
                 console.log('找到Cookie模板，开始验证...');
-                const validationResult = template.validate(cookieString);
+                const cookieObj = new CookieTemplate(
+                    template.domain,
+                    template.requiredFields,
+                    template.template
+                );
+                const validationResult = cookieObj.validate(cookieString);
                 if (!validationResult.valid) {
                     console.warn('Cookie验证警告:', validationResult.message);
                     // 这里只发出警告，不阻止用户获取Cookie
