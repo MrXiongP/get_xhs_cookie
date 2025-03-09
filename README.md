@@ -1,85 +1,113 @@
 # 小红书Cookie获取器
 
-一个简单易用的Chrome扩展，用于获取小红书网站的Cookie信息。
+![Chrome扩展](https://img.shields.io/badge/Chrome_Extension-v1.0-blue?logo=google-chrome)
 
-## 功能特点
+专业的Chrome扩展工具，用于安全获取和管理小红书网站的Cookie信息，支持开发者调试和数据分析。
 
-- 一键获取小红书网站Cookie
-- 支持自定义域名规则
-- 提供Cookie模板管理
-- 自动复制到剪贴板
-- 友好的用户界面
+## 功能特性
 
-## 安装步骤
-
-1. 下载项目代码
-2. 打开Chrome浏览器，进入扩展程序页面（chrome://extensions/）
-3. 开启开发者模式
-4. 点击「加载已解压的扩展程序」
-5. 选择项目文件夹
-
-## 使用说明
-
-### 快速获取Cookie
-
-1. 访问小红书网站
-2. 点击扩展图标
-3. Cookie将自动复制到剪贴板
-
-### 自定义域名规则
-
-1. 点击扩展图标
-2. 点击「设置」按钮
-3. 在「域名规则」标签页添加新规则
-4. 验证并保存规则
-
-### Cookie模板管理
-
-1. 进入设置页面
-2. 切换到「Cookie模板」标签
-3. 输入域名和Cookie字符串
-4. 点击「分析」创建模板
-
-## 主要功能
-
-### Cookie获取
-- 支持一键获取当前网站Cookie
-- 自动过滤并格式化Cookie信息
+? 核心功能
+- 智能识别小红书域名（支持*.xiaohongshu.com）
+- 一键获取当前页面完整Cookie集合
+- 基于模板的Cookie字段验证
 - 即时复制到剪贴板
+- 实时操作日志记录
 
-### 域名管理
-- 默认支持小红书域名
-- 支持添加自定义域名规则
-- 正则表达式匹配支持
+? 高级功能
+- 自定义域名匹配规则
+- Cookie模板管理系统
+  - 必填字段验证
+  - 可选字段支持
+  - 模板导入导出
+- 快捷键支持
+- 详细的操作日志
 
-### 模板系统
-- Cookie模板创建和管理
-- 自动识别必需字段
-- 模板验证功能
+## 技术实现
 
-## 技术栈
+- **核心架构**
+  - Chrome Extension MV3架构
+  - Service Worker后台服务
+  - 基于Promise的异步处理
+  - 模块化的代码组织
 
-- Chrome Extension API
-- JavaScript
-- TailwindCSS
+- **技术栈**
+  - JavaScript ES6+
+  - Chrome Extension APIs
+    - Cookies API
+    - Storage API
+    - Scripting API
+  - 自定义存储管理器
 
-## 注意事项
+## 安装指南
 
-- 请确保已登录小红书网站
-- 使用前需开启扩展的Cookie访问权限
-- 建议定期更新Cookie模板
+### 开发模式安装
+1. 克隆仓库
+```bash
+git clone https://github.com/your-repo/get_xhs.git
+```
+2. 安装依赖
+```bash
+cd get_xhs
+npm install  # 这将创建node_modules目录并安装所有必要的依赖
+```
+3. 构建项目
+```bash
+npm run build  # 使用TailwindCSS和PostCSS进行样式构建
+```
 
-## 开发计划
+4. 加载扩展
+   - 访问 `chrome://extensions`
+   - 启用「开发者模式」
+   - 点击「加载已解压的扩展程序」选择`dist`目录
 
-- [ ] 支持批量导出Cookie
-- [ ] 添加Cookie有效性验证
-- [ ] 优化用户界面体验
-- [ ] 支持更多自定义选项
+### 生产环境安装
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/your-extension-id?label=Chrome%20Web%20Store)](https://chrome.google.com/webstore/detail/your-extension-id)
+
+## 使用文档
+
+### 基础使用
+1. 访问小红书网站，并登录
+2. 点击扩展图标即可获取cookie到剪切板
+3. 也可以按住shift键点击扩展图标，展开扩展面板
+4. 可以自定义设置域名匹配规则和Cookie模板（复制一段cookie到模板中，然后点击分析并保存模版）
+
+### 开发者API
+```javascript
+// 获取当前Cookie
+chrome.runtime.sendMessage({
+  action: 'getCookies',
+  domain: 'xiaohongshu.com'
+}, response => {
+  console.log('Cookies:', response);
+});
+```
+
+## 权限声明
+
+? 本扩展需要以下权限：
+- `cookies`：用于读取指定域名的Cookie数据
+- `clipboardWrite`：复制Cookie到剪贴板
+- `scripting`：执行页面脚本和日志记录
+- `storage`：存储Cookie模板和域名规则
+- `host_permissions`：访问小红书相关域名
 
 ## 贡献指南
 
-欢迎提交Issue和Pull Request来帮助改进项目。
+欢迎通过以下方式参与贡献：
+1. 提交Issue报告问题
+2. Fork仓库并创建Pull Request
+3. 完善单元测试（使用Jest框架）
+4. 更新文档翻译（支持多语言）
+
+## 安全声明
+
+?? 注意事项：
+- 本扩展不会上传任何用户数据
+- 请勿在公共设备上保存敏感配置
+- 定期检查Cookie有效期
+
+
 
 ## 许可证
 
-[MIT License](LICENSE)
+[MIT License](LICENSE) ? 2024 Your Name

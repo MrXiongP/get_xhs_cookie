@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "小红书Cookie获取器",
+    "name": "小红书Cookie获取器——按住shift键点击打开弹窗界面，设置自定义规则",
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'"
     },
@@ -29,7 +29,6 @@
         "*://*.xiaohongshu.com/*"
     ],
     "action": {
-        "default_popup": "popup/index.html",
         "default_width": 1000,
         "default_height": 600,
         "default_icon": {
@@ -50,7 +49,8 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "assets/*"
+                "assets/*",
+                "content/keyboardListener.js"
             ],
             "matches": [
                 "<all_urls>"

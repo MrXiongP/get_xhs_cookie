@@ -204,39 +204,34 @@ async function getCookies() {
 // 存储Shift键状态
 let isShiftKeyPressed = false;
 
+// 初始化时设置popup为禁用状态
+chrome.action.setPopup({ popup: '' });
+
 // 监听键盘事件
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'KEY_STATUS') {
         isShiftKeyPressed = message.isShiftPressed;
         logMessage(`Shift键状态更新: ${isShiftKeyPressed ? '按下' : '未按下'}`);
-        // 当shift键状态改变时更新popup设置
-        updateExtensionPopup();
+        // 在shift释放时清除popup设置
+        if (!isShiftKeyPressed) {
+            chrome.action.setPopup({ popup: '' });
+            logMessage('已禁用popup界面');
+        }
     }
 });
 
 // 监听插件图标点击事件
 chrome.action.onClicked.addListener(async (tab) => {
-    // 根据shift键状态决定行为
-    if (!isShiftKeyPressed) {
-        // 如果没有按下Shift键，直接获取Cookie
-        logMessage('直接获取Cookie');
+    if (isShiftKeyPressed) {
+        // 按住shift时才设置并打开popup
+        chrome.action.setPopup({ popup: 'popup/index.html' });
+        chrome.action.openPopup();
+    } else {
+        // 未按shift时直接获取cookie
         getCookies();
     }
-    // 如果按下了shift键，不做任何处理
-    // 由于manifest.json中设置了default_popup
-    // Chrome会自动打开popup页面
 });
 
-// 更新action的popup设置
-function updateExtensionPopup() {
-    if (isShiftKeyPressed) {
-        // shift按下时启用popup
-        chrome.action.setPopup({ popup: 'popup/index.html' });
-    } else {
-        // shift未按下时禁用popup
-        chrome.action.setPopup({ popup: '' });
-    }
-}
 // 监听来自popup页面和options页面的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'GET_COOKIES') {
