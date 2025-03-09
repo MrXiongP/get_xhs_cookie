@@ -18,7 +18,9 @@ try {
 }
 
 // 统一的日志输出函数
-function logMessage(message, type = 'info') {
+function logMessage(message, type = 'info', error = null) {
+    // 如果有错误对象，添加错误详情
+    const fullMessage = error ? `${message} - ${error.message}\n${error.stack || ''}` : message;
     // 输出到扩展控制台
     console.log(`[${type}] ${message}`);
     // 发送到popup页面的操作日志
@@ -34,7 +36,7 @@ function logMessage(message, type = 'info') {
                 target: { tabId: tab.id },
                 func: (msg, t) => { console.log(`[${t}] ${msg}`); },
                 args: [message, type]
-            }).catch(() => {});
+            }).catch(() => { });
         }
     });
 }
@@ -89,11 +91,11 @@ async function getCookies() {
         if (filteredCookies.length === 0) {
             throw new Error('未找到有效的Cookie');
         }
-        
+
         // 格式化Cookie
         logMessage('开始格式化Cookie...');
         const cookieString = formatCookies(filteredCookies);
-        
+
         // 检查是否有对应域名的Cookie模板，如果有则验证Cookie是否包含所有必需字段
         try {
             const [matchedDomain] = domainRule;
@@ -199,10 +201,30 @@ async function getCookies() {
     }
 }
 
+// 存储Shift键状态
+let isShiftKeyPressed = false;
+
+// 监听键盘事件
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'KEY_STATUS') {
+        isShiftKeyPressed = message.isShiftPressed;
+        logMessage(`Shift键状态更新: ${isShiftKeyPressed ? '按下' : '未按下'}`);
+    }
+});
+
 // 监听插件图标点击事件
-chrome.action.onClicked.addListener(() => {
-    // 如果没有设置default_popup，这个事件会被触发
-    getCookies();
+chrome.action.onClicked.addListener(async (tab) => {
+    logMessage('扩展图标被点击');
+    // 使用存储的Shift键状态
+    const isShiftPressed = isShiftKeyPressed;
+
+    logMessage(`扩展图标被点击，Shift键状态: ${isShiftPressed ? '按下' : '未按下'}`);
+
+    // 如果按下了Shift键，直接获取Cookie
+    if (isShiftPressed) {
+        logMessage('检测到Shift键被按下，直接获取Cookie');
+        getCookies();
+    }
 });
 
 // 监听来自popup页面和options页面的消息
@@ -210,7 +232,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'GET_COOKIES') {
         getCookies();
     }
-    
+
     // 处理options页面的函数请求
     if (message.action === 'getFunction') {
         if (message.function === 'isValidRegex') {
@@ -219,28 +241,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true;
         }
     }
-    
+
     // 处理域名规则相关请求
     if (message.action === 'getAllDomainRules') {
         self.getAllDomainRules().then(sendResponse);
         return true;
     }
-    
+
     if (message.action === 'saveCustomDomainRule') {
-        self.saveCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({error: error.message}));
+        self.saveCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({ error: error.message }));
         return true;
     }
-    
+
     if (message.action === 'removeCustomDomainRule') {
-        self.removeCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({error: error.message}));
+        self.removeCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({ error: error.message }));
         return true;
     }
-    
+
     if (message.action === 'getDefaultRules') {
         sendResponse(DEFAULT_DOMAIN_RULES);
         return true;
     }
-    
+
     // 处理Cookie模板相关请求
     if (message.action === 'getClass' && message.class === 'CookieTemplate') {
         // 发送类的字符串表示而不是类本身，避免序列化错误
@@ -252,14 +274,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true;
     }
-    
+
     if (message.action === 'getCookieTemplate') {
-        getCookieTemplate(message.domain).then(sendResponse).catch(error => sendResponse({error: error.message}));
+        getCookieTemplate(message.domain).then(sendResponse).catch(error => sendResponse({ error: error.message }));
         return true;
     }
-    
+
     if (message.action === 'createTemplateFromCookie') {
-        createTemplateFromCookie(message.domain, message.cookieString).then(sendResponse).catch(error => sendResponse({error: error.message}));
+        createTemplateFromCookie(message.domain, message.cookieString).then(sendResponse).catch(error => sendResponse({ error: error.message }));
         return true;
     }
 });

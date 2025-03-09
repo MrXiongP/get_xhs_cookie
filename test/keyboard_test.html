@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>键盘事件测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .event-log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .event-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .event-item.shift {
+            background-color: #ffe6e6;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>键盘事件测试页面</h1>
+
+    <div class="instructions">
+        <h3>使用说明：</h3>
+        <p>1. 此页面用于测试键盘事件监听功能，特别是Shift键的监听。</p>
+        <p>2. 在页面上按下任意键，事件日志区域将显示捕获到的键盘事件。</p>
+        <p>3. 特别关注Shift键的按下和释放事件是否被正确捕获。</p>
+        <p>4. 可以使用下方的按钮清除日志或模拟Shift键事件。</p>
+    </div>
+
+    <div class="status" id="shiftStatus">Shift键状态：未按下</div>
+
+    <div class="event-log" id="eventLog"></div>
+
+    <div>
+        <button id="clearLog">清除日志</button>
+        <button id="simulateShiftDown">模拟Shift按下</button>
+        <button id="simulateShiftUp">模拟Shift释放</button>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const eventLog = document.getElementById('eventLog');
+        const shiftStatus = document.getElementById('shiftStatus');
+        const clearLogBtn = document.getElementById('clearLog');
+        const simulateShiftDownBtn = document.getElementById('simulateShiftDown');
+        const simulateShiftUpBtn = document.getElementById('simulateShiftUp');
+
+        // 当前Shift键状态
+        let isShiftPressed = false;
+        let lastShiftState = false;
+
+        // 添加事件到日志
+        function logEvent(event, isSimulated = false) {
+            // 只处理Shift键事件
+            if (event.key === 'Shift' || event.keyCode === 16) {
+                // 更新Shift键状态
+                isShiftPressed = event.type === 'keydown';
+
+                // 只有当状态发生变化时才记录日志
+                if (isShiftPressed !== lastShiftState) {
+                    const eventItem = document.createElement('div');
+                    eventItem.className = 'event-item shift';
+
+                    // 格式化事件信息
+                    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                    const eventInfo = {
+                        time: timestamp,
+                        type: event.type,
+                        key: event.key,
+                        keyCode: event.keyCode,
+                        target: event.target.tagName,
+                        simulated: isSimulated
+                    };
+
+                    eventItem.textContent = JSON.stringify(eventInfo);
+                    eventLog.appendChild(eventItem);
+                    eventLog.scrollTop = eventLog.scrollHeight; // 自动滚动到底部
+
+                    // 更新状态显示
+                    shiftStatus.textContent = `Shift键状态：${isShiftPressed ? '按下' : '未按下'}`;
+
+                    // 更新上一次状态
+                    lastShiftState = isShiftPressed;
+                }
+            } else {
+                // 非Shift键事件正常记录
+                const eventItem = document.createElement('div');
+                eventItem.className = 'event-item';
+
+                // 格式化事件信息
+                const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                const eventInfo = {
+                    time: timestamp,
+                    type: event.type,
+                    key: event.key,
+                    keyCode: event.keyCode,
+                    target: event.target.tagName,
+                    simulated: isSimulated
+                };
+
+                eventItem.textContent = JSON.stringify(eventInfo);
+                eventLog.appendChild(eventItem);
+                eventLog.scrollTop = eventLog.scrollHeight; // 自动滚动到底部
+            }
+        }
+
+        // 监听键盘事件 - 使用捕获阶段
+        window.addEventListener('keydown', (event) => {
+            logEvent(event);
+            console.log('捕获到按键事件:', {
+                type: event.type,
+                key: event.key,
+                keyCode: event.keyCode,
+                target: event.target.tagName,
+                timestamp: new Date().toISOString()
+            });
+        }, true);
+
+        window.addEventListener('keyup', (event) => {
+            logEvent(event);
+            console.log('捕获到按键事件:', {
+                type: event.type,
+                key: event.key,
+                keyCode: event.keyCode,
+                target: event.target.tagName,
+                timestamp: new Date().toISOString()
+            });
+        }, true);
+
+        // 清除日志按钮
+        clearLogBtn.addEventListener('click', () => {
+            eventLog.innerHTML = '';
+        });
+
+        // 模拟Shift按下按钮
+        simulateShiftDownBtn.addEventListener('click', () => {
+            const event = new KeyboardEvent('keydown', {
+                key: 'Shift',
+                keyCode: 16,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+            logEvent(event, true);
+        });
+
+        // 模拟Shift释放按钮
+        simulateShiftUpBtn.addEventListener('click', () => {
+            const event = new KeyboardEvent('keyup', {
+                key: 'Shift',
+                keyCode: 16,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+            logEvent(event, true);
+        });
+
+        // 页面加载完成后添加初始消息
+        window.addEventListener('load', () => {
+            const eventItem = document.createElement('div');
+            eventItem.className = 'event-item';
+            eventItem.textContent = '页面加载完成，开始监听键盘事件...';
+            eventLog.appendChild(eventItem);
+        });
+    </script>
+</body>
+
+</html>
