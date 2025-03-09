@@ -5,7 +5,6 @@ console.log('%c[键盘监听器] 脚本开始加载...', 'color: blue; font-weig
 const keyStates = {}; // 使用对象来存储所有按键的状态
 const KEY_DEBOUNCE_TIME = 100; // 设置防抖时间（毫秒）
 let isInitialized = false; // 添加初始化标志
-let lastShiftState = false; // 追踪上一次Shift键的状态
 
 // 统一的事件处理函数
 // 添加更多调试信息
@@ -42,15 +41,11 @@ function handleKeyEvent(event) {
 
     // 如果是Shift键，进行特殊处理
     if (event.key === 'Shift' || event.keyCode === 16) {
-        const isShiftPressed = event.type === 'keydown';
-        console.log(`[Shift键处理] 当前状态: ${isShiftPressed ? '已按下' : '未按下'}`)
+        console.log(`[Shift键处理] 当前状态: ${keyStates[keyIdentifier]?.pressed ? '已按下' : '未按下'}`)
 
-        // 只有当Shift键状态发生变化时才处理
-        if (isShiftPressed !== lastShiftState) {
-            console.log(`[Shift键状态] 状态从${lastShiftState ? '按下' : '未按下'}变为${isShiftPressed ? '按下' : '未按下'}`);
-            lastShiftState = isShiftPressed;
-
-            if (isShiftPressed) {
+        if (event.type === 'keydown') {
+            // 检查按键是否已经处于按下状态
+            if (!keyStates[keyIdentifier] || !keyStates[keyIdentifier].pressed) {
                 console.log('[Shift键状态] 检测到新的按下事件')
                 // 更新按键状态为按下
                 keyStates[keyIdentifier] = {
@@ -73,26 +68,29 @@ function handleKeyEvent(event) {
                     console.error('发送消息时发生错误:', error);
                 }
             } else {
-                // 按键释放时重置状态
-                keyStates[keyIdentifier] = {
-                    pressed: false,
-                    lastTriggerTime: currentTime
-                };
+                console.log('[Shift键状态] 忽略重复的按下事件')
+            }
+        } else if (event.type === 'keyup') {
+            console.log('[Shift键状态] 检测到释放事件')
+            // 按键释放时重置状态
+            keyStates[keyIdentifier] = {
+                pressed: false,
+                lastTriggerTime: currentTime
+            };
 
-                // 发送释放消息
-                try {
-                    chrome.runtime.sendMessage({
-                        type: 'KEY_STATUS',
-                        isShiftPressed: false,
-                        timestamp: currentTime
-                    }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            console.error('消息发送失败:', chrome.runtime.lastError);
-                        }
-                    });
-                } catch (error) {
-                    console.error('发送消息时发生错误:', error);
-                }
+            // 发送释放消息
+            try {
+                chrome.runtime.sendMessage({
+                    type: 'KEY_STATUS',
+                    isShiftPressed: false,
+                    timestamp: currentTime
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('消息发送失败:', chrome.runtime.lastError);
+                    }
+                });
+            } catch (error) {
+                console.error('发送消息时发生错误:', error);
             }
         }
     }
