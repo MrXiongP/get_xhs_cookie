@@ -32,6 +32,11 @@ console.info('[键盘监听器] 请确保已在开发者工具中启用了所有
 
 // 修改事件处理函数中的日志
 function handleKeyEvent(event) {
+    // 添加防抖判断
+    if (event.repeat) {
+        originalConsole.log(`[防抖] 忽略重复事件: ${event.type}`);
+        return;
+    }
     // 获取按键标识符，优先使用key，如果不可用则使用keyCode
     const keyIdentifier = event.key || `code-${event.keyCode}`;
 
@@ -138,8 +143,8 @@ function initializeKeyboardListener() {
         // 在捕获阶段添加事件监听，确保能捕获到所有按键事件
         window.addEventListener('keydown', handleKeyEvent, true);
         window.addEventListener('keyup', handleKeyEvent, true);
-        document.addEventListener('keydown', handleKeyEvent, true);
-        document.addEventListener('keyup', handleKeyEvent, true);
+        // document.addEventListener('keydown', handleKeyEvent, true);
+        // document.addEventListener('keyup', handleKeyEvent, true);
 
         eventListenersActive = true;
 
