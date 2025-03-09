@@ -34,7 +34,7 @@ function logMessage(message, type = 'info') {
                 target: { tabId: tab.id },
                 func: (msg, t) => { console.log(`[${t}] ${msg}`); },
                 args: [message, type]
-            }).catch(() => { });
+            }).catch(() => {});
         }
     });
 }
@@ -72,8 +72,8 @@ async function getCookies() {
         logMessage('开始获取域名相关的cookies...');
         // 修改获取Cookie的方式，使用更宽松的匹配条件
         const cookies = await chrome.cookies.getAll({
-            // 使用部分域名匹配，确保能获取到所有相关Cookie，包括子域名
-            domain: domain.includes('xiaohongshu.com') ? domain : 'xiaohongshu.com'
+            // 使用部分域名匹配，确保能获取到所有相关Cookie
+            domain: 'xiaohongshu.com'
         });
         logMessage(`获取到的cookies数量: ${cookies.length}`);
 
@@ -89,11 +89,11 @@ async function getCookies() {
         if (filteredCookies.length === 0) {
             throw new Error('未找到有效的Cookie');
         }
-
+        
         // 格式化Cookie
         logMessage('开始格式化Cookie...');
         const cookieString = formatCookies(filteredCookies);
-
+        
         // 检查是否有对应域名的Cookie模板，如果有则验证Cookie是否包含所有必需字段
         try {
             const [matchedDomain] = domainRule;
@@ -210,7 +210,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'GET_COOKIES') {
         getCookies();
     }
-
+    
     // 处理options页面的函数请求
     if (message.action === 'getFunction') {
         if (message.function === 'isValidRegex') {
@@ -219,28 +219,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true;
         }
     }
-
+    
     // 处理域名规则相关请求
     if (message.action === 'getAllDomainRules') {
         self.getAllDomainRules().then(sendResponse);
         return true;
     }
-
+    
     if (message.action === 'saveCustomDomainRule') {
-        self.saveCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({ error: error.message }));
+        self.saveCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({error: error.message}));
         return true;
     }
-
+    
     if (message.action === 'removeCustomDomainRule') {
-        self.removeCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({ error: error.message }));
+        self.removeCustomDomainRule(message.rule).then(sendResponse).catch(error => sendResponse({error: error.message}));
         return true;
     }
-
+    
     if (message.action === 'getDefaultRules') {
         sendResponse(DEFAULT_DOMAIN_RULES);
         return true;
     }
-
+    
     // 处理Cookie模板相关请求
     if (message.action === 'getClass' && message.class === 'CookieTemplate') {
         // 发送类的字符串表示而不是类本身，避免序列化错误
@@ -252,14 +252,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true;
     }
-
+    
     if (message.action === 'getCookieTemplate') {
-        getCookieTemplate(message.domain).then(sendResponse).catch(error => sendResponse({ error: error.message }));
+        getCookieTemplate(message.domain).then(sendResponse).catch(error => sendResponse({error: error.message}));
         return true;
     }
-
+    
     if (message.action === 'createTemplateFromCookie') {
-        createTemplateFromCookie(message.domain, message.cookieString).then(sendResponse).catch(error => sendResponse({ error: error.message }));
+        createTemplateFromCookie(message.domain, message.cookieString).then(sendResponse).catch(error => sendResponse({error: error.message}));
         return true;
     }
 });
