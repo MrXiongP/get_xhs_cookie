@@ -1,7 +1,7 @@
 // 默认的小红书域名规则
 const DEFAULT_DOMAIN_RULES = [
-    '^.*\.xiaohongshu\.com$',
-    '^xiaohongshu\.com$'
+    '.*xiaohongshu\.com',
+    'xiaohongshu\.com'
 ];
 
 // 导出为全局变量
@@ -18,24 +18,24 @@ function isValidRegex(pattern) {
 }
 
 // 获取所有域名规则（包括默认规则和自定义规则）
-self.getAllDomainRules = async function() {
+self.getAllDomainRules = async function () {
     try {
         // 使用新的StorageManager获取域名规则
         const domainRules = await StorageManager.getAllDomainRules();
-        
+
         // 将新的数据结构转换为旧的格式，以保持向后兼容性
         let rules = [...DEFAULT_DOMAIN_RULES];
-        
+
         // 添加自定义规则
         Object.values(domainRules).forEach(domainRule => {
             if (domainRule.rules && Array.isArray(domainRule.rules)) {
                 rules = [...rules, ...domainRule.rules];
             }
         });
-        
+
         // 去重
         rules = [...new Set(rules)];
-        
+
         return rules;
     } catch (error) {
         console.error('获取域名规则失败:', error);
@@ -44,7 +44,7 @@ self.getAllDomainRules = async function() {
 }
 
 // 保存自定义域名规则
-self.saveCustomDomainRule = async function(rule) {
+self.saveCustomDomainRule = async function (rule) {
     if (!isValidRegex(rule)) {
         throw new Error('无效的正则表达式');
     }
@@ -52,18 +52,18 @@ self.saveCustomDomainRule = async function(rule) {
     try {
         // 从规则中提取域名
         const domain = rule.replace(/[\^\$\*\.]/g, '');
-        
+
         // 获取现有规则
         const domainRules = await StorageManager.getAllDomainRules();
         const templateId = `${domain}_template`;
-        
+
         if (domainRules[domain]) {
             // 如果域名已存在，添加新规则
             if (!domainRules[domain].rules.includes(rule)) {
                 domainRules[domain].rules.push(rule);
                 await StorageManager.saveDomainRule(
-                    domain, 
-                    domainRules[domain].rules, 
+                    domain,
+                    domainRules[domain].rules,
                     domainRules[domain].template_id
                 );
             }
@@ -86,25 +86,25 @@ async function removeCustomDomainRule(rule) {
         if (DEFAULT_DOMAIN_RULES.includes(rule)) {
             throw new Error('默认规则不可删除');
         }
-        
+
         // 从规则中提取域名
         const domain = rule.replace(/[\^\$\*\.]/g, '');
-        
+
         // 获取现有规则
         const domainRules = await StorageManager.getAllDomainRules();
-        
+
         if (domainRules[domain] && domainRules[domain].rules) {
             const rules = domainRules[domain].rules;
             const index = rules.indexOf(rule);
-            
+
             if (index !== -1) {
                 rules.splice(index, 1);
-                
+
                 if (rules.length > 0) {
                     // 如果还有其他规则，更新规则列表
                     await StorageManager.saveDomainRule(
-                        domain, 
-                        rules, 
+                        domain,
+                        rules,
                         domainRules[domain].template_id
                     );
                 } else {
@@ -127,8 +127,23 @@ async function removeCustomDomainRule(rule) {
 async function isDomainMatched(domain) {
     // 获取所有域名规则
     const domainRules = await StorageManager.getAllDomainRules();
-    
-    // 检查是否有匹配的规则
+
+    // 首先检查默认规则
+    const isMatchedWithDefault = DEFAULT_DOMAIN_RULES.some(pattern => {
+        try {
+            const regex = new RegExp(pattern);
+            return regex.test(domain);
+        } catch (e) {
+            console.error(`规则 ${pattern} 无效:`, e);
+            return false;
+        }
+    });
+
+    if (isMatchedWithDefault) {
+        return true;
+    }
+
+    // 检查自定义规则
     const matchedDomain = Object.entries(domainRules).find(([_, rule]) => {
         return rule.rules.some(pattern => {
             try {
@@ -140,7 +155,7 @@ async function isDomainMatched(domain) {
             }
         });
     });
-    
+
     return !!matchedDomain;
 }
 

@@ -1,23 +1,52 @@
-// ´æ´¢¼üÃû
+// å­˜å‚¨é”®å
 const STORAGE_KEYS = {
     DOMAIN_RULES: 'xhs_domain_rules',
     COOKIE_TEMPLATES: 'xhs_cookie_templates'
 };
 
-// ´æ´¢½á¹¹¹ÜÀíÀà
+// å­˜å‚¨ç»“æ„ç®¡ç†ç±»
 class StorageManager {
-    // »ñÈ¡ËùÓĞÓòÃû¹æÔòºÍ¹ØÁªµÄÄ£°å
+    // è·å–æ‰€æœ‰åŸŸåè§„åˆ™
     static async getAllDomainRules() {
         try {
             const data = await chrome.storage.local.get(STORAGE_KEYS.DOMAIN_RULES);
-            return data[STORAGE_KEYS.DOMAIN_RULES] || {};
+            const rules = data[STORAGE_KEYS.DOMAIN_RULES] || {};
+
+            // ç¡®ä¿è¿”å›çš„è§„åˆ™åŒ…å«é»˜è®¤è§„åˆ™
+            if (!rules['xiaohongshu.com']) {
+                rules['xiaohongshu.com'] = {
+                    rules: ['.*xiaohongshu\.com', 'xiaohongshu\.com'],
+                    template_id: 'xiaohongshu_template'
+                };
+                // åŒæ—¶åˆ›å»ºé»˜è®¤çš„Cookieæ¨¡æ¿
+                const templates = await this.getAllCookieTemplates();
+                if (!templates['xiaohongshu_template']) {
+                    await this.saveCookieTemplate('xiaohongshu_template', 'xiaohongshu.com',
+                        ['abRequestId', 'webId', 'gid', 'xsecappid'],
+                        {
+                            abRequestId: '[a-f0-9-]{36}',
+                            webId: '[a-f0-9]{32}',
+                            gid: 'yj[\\w]{50,60}',
+                            xsecappid: 'xhs-pc-web',
+                            webBuild: '\\d+\\.\\d+\\.\\d+',
+                            web_session: '[a-f0-9]{40}',
+                            acw_tc: '[a-f0-9]{32}',
+                            websectiga: '[a-f0-9]{64}',
+                            sec_poison_id: '[a-f0-9-]{36}',
+                            loadts: '\\d{13}',
+                            unread: '\\{.*\\}'
+                        }
+                    );
+                }
+            }
+            return rules;
         } catch (error) {
-            console.error('»ñÈ¡ÓòÃû¹æÔòÊ§°Ü:', error);
+            console.error('è·å–åŸŸåè§„åˆ™å¤±è´¥:', error);
             return {};
         }
     }
 
-    // ±£´æÓòÃû¹æÔòºÍ¹ØÁªµÄÄ£°å
+    // ä¿å­˜åŸŸåè§„åˆ™
     static async saveDomainRule(domain, rules, templateId) {
         try {
             const allRules = await this.getAllDomainRules();
@@ -28,23 +57,23 @@ class StorageManager {
             await chrome.storage.local.set({ [STORAGE_KEYS.DOMAIN_RULES]: allRules });
             return true;
         } catch (error) {
-            console.error('±£´æÓòÃû¹æÔòÊ§°Ü:', error);
+            console.error('ä¿å­˜åŸŸåè§„åˆ™å¤±è´¥:', error);
             throw error;
         }
     }
 
-    // »ñÈ¡ËùÓĞCookieÄ£°å
+    // è·å–æ‰€æœ‰Cookieæ¨¡æ¿
     static async getAllCookieTemplates() {
         try {
             const data = await chrome.storage.local.get(STORAGE_KEYS.COOKIE_TEMPLATES);
             return data[STORAGE_KEYS.COOKIE_TEMPLATES] || {};
         } catch (error) {
-            console.error('»ñÈ¡CookieÄ£°åÊ§°Ü:', error);
+            console.error('è·å–Cookieæ¨¡æ¿å¤±è´¥:', error);
             return {};
         }
     }
 
-    // ±£´æCookieÄ£°å
+    // ä¿å­˜Cookieæ¨¡æ¿
     static async saveCookieTemplate(templateId, domain, requiredFields, template) {
         try {
             const allTemplates = await this.getAllCookieTemplates();
@@ -56,12 +85,12 @@ class StorageManager {
             await chrome.storage.local.set({ [STORAGE_KEYS.COOKIE_TEMPLATES]: allTemplates });
             return true;
         } catch (error) {
-            console.error('±£´æCookieÄ£°åÊ§°Ü:', error);
+            console.error('ä¿å­˜Cookieæ¨¡æ¿å¤±è´¥:', error);
             throw error;
         }
     }
 
-    // ¸ù¾İÓòÃû»ñÈ¡¹ØÁªµÄCookieÄ£°å
+    // æ ¹æ®åŸŸåè·å–Cookieæ¨¡æ¿
     static async getCookieTemplateByDomain(domain) {
         try {
             const domainRules = await this.getAllDomainRules();
@@ -73,30 +102,30 @@ class StorageManager {
             const templates = await this.getAllCookieTemplates();
             return templates[domainRule.template_id] || null;
         } catch (error) {
-            console.error('»ñÈ¡CookieÄ£°åÊ§°Ü:', error);
+            console.error('è·å–Cookieæ¨¡æ¿å¤±è´¥:', error);
             return null;
         }
     }
 
-    // Êı¾İÇ¨ÒÆ
+    // æ•°æ®è¿ç§»
     static async migrateData() {
         try {
-            // »ñÈ¡¾ÉµÄÊı¾İ
+            // è·å–æ—§çš„è‡ªå®šä¹‰è§„åˆ™
             const oldCustomRules = await chrome.storage.local.get('xhs_custom_domain_rules');
             const oldTemplates = await chrome.storage.local.get('xhs_cookie_templates');
 
-            // ×ª»»²¢±£´æĞÂµÄÊı¾İ½á¹¹
+            // è½¬æ¢æ—§çš„æ•°æ®ç»“æ„
             const domainRules = {};
             const cookieTemplates = {};
 
-            // ´¦ÀíÄ¬ÈÏ¹æÔò
+            // æ·»åŠ é»˜è®¤è§„åˆ™
             const defaultRules = ['xiaohongshu.com'];
             domainRules['xiaohongshu.com'] = {
                 rules: defaultRules.map(domain => `^${domain}$`),
                 template_id: 'xiaohongshu_template'
             };
 
-            // ´¦Àí×Ô¶¨Òå¹æÔò
+            // æ·»åŠ è‡ªå®šä¹‰è§„åˆ™
             if (oldCustomRules['xhs_custom_domain_rules']) {
                 oldCustomRules['xhs_custom_domain_rules'].forEach(rule => {
                     const domain = rule.replace(/[\^\$\*\.]/g, '');
@@ -111,19 +140,18 @@ class StorageManager {
                 });
             }
 
-            // ´¦ÀíCookieÄ£°å
+            // æ·»åŠ Cookieæ¨¡æ¿
             if (oldTemplates['xhs_cookie_templates']) {
-                Object.entries(oldTemplates['xhs_cookie_templates']).forEach(([domain, template]) => {
-                    const templateId = `${domain}_template`;
+                Object.entries(oldTemplates['xhs_cookie_templates']).forEach(([templateId, template]) => {
                     cookieTemplates[templateId] = {
-                        domain: domain,
+                        domain: template.domain,
                         requiredFields: template.requiredFields,
-                        template: template
+                        template: template.template
                     };
                 });
             }
 
-            // ±£´æĞÂµÄÊı¾İ½á¹¹
+            // ä¿å­˜æ–°çš„æ•°æ®ç»“æ„
             await chrome.storage.local.set({
                 [STORAGE_KEYS.DOMAIN_RULES]: domainRules,
                 [STORAGE_KEYS.COOKIE_TEMPLATES]: cookieTemplates
@@ -131,11 +159,11 @@ class StorageManager {
 
             return true;
         } catch (error) {
-            console.error('Êı¾İÇ¨ÒÆÊ§°Ü:', error);
+            console.error('æ•°æ®è¿ç§»å¤±è´¥:', error);
             throw error;
         }
     }
 }
 
-// µ¼³öÎªÈ«¾Ö±äÁ¿
+// å¯¼å‡ºä¸ºå…¨å±€å˜é‡
 self.StorageManager = StorageManager;
